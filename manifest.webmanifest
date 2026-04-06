@@ -1,0 +1,9 @@
+{
+  "name": "Cycle Wellness App",
+  "short_name": "CycleWell",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121214",
+  "theme_color": "#121214",
+  "icons": []
+}
