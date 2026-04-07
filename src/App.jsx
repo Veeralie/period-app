@@ -1313,7 +1313,7 @@ const fastingCountdown = useMemo(() => {
                   <div>
                     <p className="text-sm text-white/55">Remaining time</p>
                     <p className="mt-2 text-4xl font-bold">{fastingCountdown.display}</p>
-                    <FastingStage hours={fastingCountdown.elapsedHours} />
+                    <FastingStage hours={fastingCountdown.elapsedH} />
                   </div>
                   <div className="text-right text-sm text-white/65">
                     <div>Start: {selectedLog.fastingStartDateTime.replace("T", " ")}</div>
