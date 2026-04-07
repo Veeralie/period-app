@@ -119,10 +119,9 @@ export default function App() {
                   ? "#7f1d1d"       // red
                   : d.phase === "Follicular"
                     ? "#065f46"     // green (lighter)
-                    boxShadow:    
                     : d.phase === "Ovulation"
-                    ? "#92400e"   // gold
-                    : "#022c22",  // luteal dark green
+                      ? "#92400e"   // gold
+                      : "#022c22",  // luteal dark green
               color: "white",
             }}
         >
