@@ -108,26 +108,26 @@ export default function App() {
             key={i}
             onClick={() => setSelectedDate(d.date)}
             style={{
-  padding: 8,
-  borderRadius: 8,
-  border:
-    selectedDate.toDateString() === d.date.toDateString()
-      ? "2px solid #d3ae91"
-      : "1px solid #333",
-  background:
-    d.phase === "Menstrual"
-      ? "#7f1d1d"       // red
-      : d.phase === "Follicular"
-        ? "#065f46"     // green (lighter)
-    boxShadow:
-  d.phase === "Ovulation"
-    ? "0 0 6px #fbbf24"
-    : "none",    
-    : d.phase === "Ovulation"
-          ? "#92400e"   // gold
-          : "#022c22",  // luteal dark green
-  color: "white",
-}}
+              padding: 8,
+              borderRadius: 8,
+              border:
+                selectedDate.toDateString() === d.date.toDateString()
+                  ? "2px solid #d3ae91"
+                  : "1px solid #333",
+              background:
+                d.phase === "Menstrual"
+                  ? "#7f1d1d"       // red
+                  : d.phase === "Follicular"
+                    ? "#065f46"     // green (lighter)
+                    boxShadow:
+                    d.phase === "Ovulation"
+                    ? "0 0 6px #fbbf24"
+                    : "none",    
+                    : d.phase === "Ovulation"
+                    ? "#92400e"   // gold
+                    : "#022c22",  // luteal dark green
+              color: "white",
+            }}
         >
           {d.day}
         </button>
