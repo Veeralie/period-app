@@ -136,8 +136,20 @@ const estimatedCaloriesFromSteps = Math.round(Number(selectedLog.steps || 0) * 0
 
 useEffect(() => { const currentCalories = Number(selectedLog.activityCalories || 0); if (currentCalories !== estimatedCaloriesFromSteps) { updateSingleField("activityCalories", estimatedCaloriesFromSteps); } }, [selectedLog.steps]);
 
-const statsData = { dayOfCycle: selectedCycleDay, fertility: inference.confidence > 0 ? inference.fertilityLabel : "Likely post-ovulation", ovulation: selectedCycleDay > ovulationDay ? "Past predicted ovulation" : selectedCycleDay === ovulationDay ? "Predicted ovulation" : "Ovulation approaching", pregnancyChance: ${selectedChance.label} chance of pregnancy, inferredPhase: inference.label, confidence: ${inference.confidence}% confidence, scores: inference.scores, };
-
+const statsData = {
+  dayOfCycle: selectedCycleDay,
+  fertility: inference.confidence > 0 ? inference.fertilityLabel : "Likely post-ovulation",
+  ovulation:
+    selectedCycleDay > ovulationDay
+      ? "Past predicted ovulation"
+      : selectedCycleDay === ovulationDay
+        ? "Predicted ovulation"
+        : "Ovulation approaching",
+  pregnancyChance: `${selectedChance.label} chance of pregnancy`,
+  inferredPhase: inference.label,
+  confidence: `${inference.confidence}% confidence`,
+  scores: inference.scores,
+};
 const fastingCountdown = useMemo(() => { const plan = selectedLog.fastingPlan || "14:10"; const [fastingHours] = plan.split(":").map(Number); const start = selectedLog.fastingStartTime || "18:30"; const end = selectedLog.fastingEndTime || "08:30"; const [sh, sm] = start.split(":").map(Number); const [eh, em] = end.split(":").map(Number); const now = new Date(); const startDate = new Date(); startDate.setHours(sh, sm, 0, 0); const endDate = new Date(); endDate.setHours(eh, em, 0, 0); if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1); if (now > endDate) { startDate.setDate(startDate.getDate() + 1); endDate.setDate(endDate.getDate() + 1); } const diff = Math.max(0, endDate - now); const hrs = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, "0"); const mins = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, "0"); const secs = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, "0"); return { display: ${hrs}:${mins}:${secs}, fastingHours, elapsed: Math.max(0, fastingHours - Math.floor(diff / (1000 * 60 * 60))), }; }, [selectedLog.fastingPlan, selectedLog.fastingStartTime, selectedLog.fastingEndTime, selectedLog.steps]);
 
 const bmi = useMemo(() => { const meters = Number(selectedLog.height || 165) / 100; return meters > 0 ? (Number(selectedLog.weight || 65) / (meters * meters)).toFixed(1) : "0.0"; }, [selectedLog.height, selectedLog.weight]);
