@@ -629,7 +629,15 @@ export default function CycleWellnessPage() {
   const lastPeriodDateObj = startOfDay(lastPeriodStart);
   const currentCycleDay = getCycleDay(today, lastPeriodDateObj, cycleLength);
   const ovulationDay = getOvulationDay(cycleLength);
-  const currentPhaseName = getPhase(currentCycleDay, periodLength, ovulationDay);
+  const selectedPhaseName = (() => {
+  const key = dateKey(selectedDate);
+  const log = logs[key];
+
+  if (log?.periodStart) return "Menstrual";
+  if (log?.periodEnd) return "Follicular";
+
+  return getPhase(selectedCycleDay, periodLength, ovulationDay);
+})();
   const currentPhase = phaseMeta[currentPhaseName];
 
   const selectedCycleDay = getCycleDay(selectedDate, lastPeriodDateObj, cycleLength);
@@ -687,21 +695,44 @@ export default function CycleWellnessPage() {
     scores: inference.scores,
   };
 
-  const fastingCountdown = useMemo(() => {
-    const start = new Date(selectedLog.fastingStartDateTime);
-    const end = new Date(selectedLog.fastingEndDateTime);
-    const remaining = Math.max(0, end - now);
-    const elapsed = Math.max(0, now - start);
-    const hrs = String(Math.floor(remaining / 3600000)).padStart(2, "0");
-    const mins = String(Math.floor((remaining % 3600000) / 60000)).padStart(2, "0");
-    const secs = String(Math.floor((remaining % 60000) / 1000)).padStart(2, "0");
+  const [now, setNow] = useState(new Date());
 
-    return {
-      display: `${hrs}:${mins}:${secs}`,
-      elapsedHours: Math.floor(elapsed / 3600000),
-      remainingMs: remaining,
-    };
-  }, [selectedLog.fastingStartDateTime, selectedLog.fastingEndDateTime, now]);
+useEffect(() => {
+  const interval = setInterval(() => {
+    setNow(new Date());
+  }, 1000);
+  return () => clearInterval(interval);
+}, []);
+
+const [now, setNow] = useState(new Date());
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    setNow(new Date());
+  }, 1000);
+  return () => clearInterval(interval);
+}, []);
+
+const fastingCountdown = useMemo(() => {
+  const start = new Date(`${dateKey(now)}T${selectedLog.fastingStartTime}`);
+  const end = new Date(`${dateKey(now)}T${selectedLog.fastingEndTime}`);
+
+  if (end <= start) end.setDate(end.getDate() + 1);
+
+  const remaining = Math.max(0, end - now);
+  const elapsed = Math.max(0, now - start);
+
+  const hrs = String(Math.floor(remaining / 3600000)).padStart(2, "0");
+  const mins = String(Math.floor((remaining % 3600000) / 60000)).padStart(2, "0");
+  const secs = String(Math.floor((remaining % 60000) / 1000)).padStart(2, "0");
+
+  const elapsedH = Math.floor(elapsed / 3600000);
+
+  return {
+    display: `${hrs}:${mins}:${secs}`,
+    elapsedH,
+  };
+}, [selectedLog.fastingStartTime, selectedLog.fastingEndTime, now]);
 
   useEffect(() => {
     const currentCalories = Number(selectedLog.activityCalories || 0);
@@ -746,25 +777,17 @@ export default function CycleWellnessPage() {
     });
   }
 
-  function markPeriodStart(date) {
-    const key = dateKey(date);
-    setLastPeriodStart(key);
-    updateLogForDate(key, (current) => ({
-      ...current,
-      periodStart: true,
-      periodEnd: false,
-    }));
-  }
+ function markPeriodEnd(date) {
+  const key = dateKey(date);
 
-  function markPeriodEnd(date) {
-    const key = dateKey(date);
-    updateLogForDate(key, (current) => ({
-      ...current,
-      periodEnd: true,
-      periodStart: false,
-    }));
-    setSelectedDate(startOfDay(date));
-  }
+  updateLogForDate(key, (current) => ({
+    ...current,
+    periodEnd: true,
+  }));
+
+  // Force UI refresh + phase recalculation
+  setSelectedDate(new Date(date));
+}
 
   function toggleGoal(goal) {
     setGoals((prev) => {
@@ -1691,70 +1714,28 @@ function PlanGrid({ title, subtitle, plans, selectedPlan, onSelect }) {
 
 function FastingStage({ hours }) {
   const stages = [
-    {
-      range: "0–4H",
-      title: "Blood sugar rises",
-      meaning: "Body is still processing recent food and insulin is active.",
-      feelings: "You may feel normal, satisfied, or just mildly hungry.",
-      coping: "Hydrate, take a light walk, and avoid unnecessary snacking cues.",
-    },
-    {
-      range: "4–8H",
-      title: "Blood sugar drops",
-      meaning: "Stored glucose starts to be used and hunger waves can appear.",
-      feelings: "Hunger waves, slight irritability, or low focus can happen.",
-      coping: "Try water, tea, electrolytes, and keep busy through the hunger wave.",
-    },
-    {
-      range: "8–10H",
-      title: "Blood sugar is normal",
-      meaning: "Energy may stabilize as your body adapts between feeding and fasting.",
-      feelings: "You may feel more stable, lighter, or clearer mentally.",
-      coping: "Stay hydrated and avoid heavy exertion if you feel light-headed.",
-    },
-    {
-      range: "10–14H",
-      title: "Fat burning starts",
-      meaning: "The body increasingly shifts toward using fat for fuel.",
-      feelings: "You might notice mild fatigue or improved focus depending on adaptation.",
-      coping: "Use light movement, hydrate well, and avoid under-eating before fasting.",
-    },
-    {
-      range: "14–18H",
-      title: "Entering ketosis",
-      meaning: "Ketone production begins to rise for some people.",
-      feelings: "Mental clarity may improve, though some feel a temporary dip in energy.",
-      coping: "Electrolytes, water, and gentle activity often help.",
-    },
-    {
-      range: "18–24H",
-      title: "Autophagy begins",
-      meaning: "Cell cleanup activity may start increasing.",
-      feelings: "Hunger may calm for some, while others feel more tired.",
-      coping: "Prioritize rest, avoid overtraining, and stay hydrated.",
-    },
-    {
-      range: "24–36H",
-      title: "Deep ketosis",
-      meaning: "The body is relying much more heavily on fat-derived fuel.",
-      feelings: "You may feel calm, steady, or more sensitive to stress if under-fueled.",
-      coping: "Hydrate well and avoid intense exercise without guidance.",
-    },
-    {
-      range: "36–48H",
-      title: "Sensitive to insulin",
-      meaning: "Insulin sensitivity may improve and the body is strongly adapted to fasting.",
-      feelings: "Stable energy or weakness can both happen depending on the person.",
-      coping: "Plan your refeed well and continue electrolytes.",
-    },
-    {
-      range: "48–72H",
-      title: "Maximum autophagy",
-      meaning: "Extended fasting may deepen cellular cleanup processes.",
-      feelings: "Very low hunger is possible, but weakness or dizziness can also happen.",
-      coping: "Only continue with supervision, hydrate, and stop if you feel unwell.",
-    },
+    { h:[0,4], t:'Blood sugar rises', d:'Body using recent food', f:'Mild hunger', c:'Hydrate, light activity' },
+    { h:[4,8], t:'Blood sugar drops', d:'Glycogen used', f:'Hunger waves', c:'Electrolytes, tea' },
+    { h:[8,10], t:'Blood sugar normal', d:'Stable energy', f:'Clear focus', c:'Stay hydrated' },
+    { h:[10,14], t:'Fat burning starts', d:'Switch to fat', f:'Light fatigue', c:'Walk, water' },
+    { h:[14,18], t:'Entering ketosis', d:'Ketones rise', f:'Mental clarity', c:'Electrolytes' },
+    { h:[18,24], t:'Autophagy begins', d:'Cell cleanup', f:'Low hunger', c:'Rest' },
+    { h:[24,36], t:'Deep ketosis', d:'High fat use', f:'Calm', c:'Hydrate well' },
+    { h:[36,48], t:'Insulin sensitivity', d:'Improved response', f:'Stable', c:'Prepare refeed' },
+    { h:[48,72], t:'Maximum autophagy', d:'Peak cleanup', f:'Very low hunger', c:'Supervise, hydrate' },
   ];
+
+  const s = stages.find(x => hours >= x.h[0] && hours < x.h[1]) || stages[stages.length - 1];
+
+  return (
+    <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm">
+      <div className="font-semibold">{s.t} ({hours}h)</div>
+      <div className="text-white/70">What it means: {s.d}</div>
+      <div className="text-white/70">Feelings: {s.f}</div>
+      <div className="text-white/70">Coping: {s.c}</div>
+    </div>
+  );
+}
 
   const stage =
     hours < 4 ? stages[0] :
