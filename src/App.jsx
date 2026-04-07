@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
