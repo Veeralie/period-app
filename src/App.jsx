@@ -46,6 +46,39 @@ export default function App() {
   const [viewDate, setViewDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(today);
 
+  useEffect(() => {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+
+  try {
+    const parsed = JSON.parse(raw);
+
+    if (parsed.lastPeriodStart) setLastPeriodStart(new Date(parsed.lastPeriodStart));
+    if (parsed.cycleLength) setCycleLength(parsed.cycleLength);
+    if (parsed.periodLength) setPeriodLength(parsed.periodLength);
+    if (parsed.viewDate) setViewDate(new Date(parsed.viewDate));
+    if (parsed.selectedDate) setSelectedDate(new Date(parsed.selectedDate));
+  } catch (err) {
+    console.error("Failed to load saved cycle data", err);
+  }
+}, []);
+  useEffect(() => {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+
+  try {
+    const parsed = JSON.parse(raw);
+
+    if (parsed.lastPeriodStart) setLastPeriodStart(new Date(parsed.lastPeriodStart));
+    if (parsed.cycleLength) setCycleLength(parsed.cycleLength);
+    if (parsed.periodLength) setPeriodLength(parsed.periodLength);
+    if (parsed.viewDate) setViewDate(new Date(parsed.viewDate));
+    if (parsed.selectedDate) setSelectedDate(new Date(parsed.selectedDate));
+  } catch (err) {
+    console.error("Failed to load saved cycle data", err);
+  }
+}, []);
+  
   const ovulationDay = getOvulationDay(cycleLength);
   const currentCycleDay = getCycleDay(
     selectedDate,
@@ -97,11 +130,66 @@ export default function App() {
       </div>
 
       {/* INFO */}
-      <div className="mt-4">
+     <div className="mt-4">
         <p>Cycle Day: {currentCycleDay}</p>
         <p>Phase: {phase}</p>
-      </div>
 
+        <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
+           <button
+             onClick={() => setLastPeriodStart(startOfDay(selectedDate))}
+             style={{
+               background: "#d3ae91",
+               color: "#2b1e1b",
+               border: "none",
+               padding: "10px 14px",
+               borderRadius: 10,
+               fontWeight: 600,
+               cursor: "pointer",
+              }}
+            >
+              Edit as period start
+            </button>
+          </div>
+        </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 20, marginBottom: 12 }}>
+  <button
+    onClick={() =>
+      setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))
+    }
+    style={{
+      background: "#1f2937",
+      color: "white",
+      border: "1px solid #333",
+      padding: "8px 12px",
+      borderRadius: 8,
+      cursor: "pointer",
+    }}
+  >
+    ←
+  </button>
+
+  <div style={{ fontWeight: 700 }}>
+    {viewDate.toLocaleString("en-US", { month: "long", year: "numeric" })}
+  </div>
+
+  <button
+    onClick={() =>
+      setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))
+    }
+    style={{
+      background: "#1f2937",
+      color: "white",
+      border: "1px solid #333",
+      padding: "8px 12px",
+      borderRadius: 8,
+      cursor: "pointer",
+    }}
+  >
+    →
+  </button>
+</div>
+      
       {/* CALENDAR */}
       <div className="grid grid-cols-7 gap-2 mt-4">
         {calendar.map((d, i) => (
