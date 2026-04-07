@@ -44,8 +44,59 @@ function buildCalendarDays(viewDate, lastPeriodStart, cycleLength, periodLength)
 
 function buildExpectedSymptomsForPhase(phaseName) { return expectedSymptomsByCategory[phaseName] || {}; }
 
-function inferPhaseFromSymptoms(symptoms, cyclePhaseHint) { const scores = { Menstrual: 0, Follicular: 0, Ovulation: 0, Luteal: 0, Pregnancy: 0 }; symptoms.forEach((symptom) => { Object.entries(phasePredictionWeights).forEach(([phase, weights]) => { if (weights.includes(symptom)) scores[phase] += 1; }); }); if (cyclePhaseHint && scores[cyclePhaseHint] !== undefined) scores[cyclePhaseHint] += 1; const entries = Object.entries(scores).sort((a, b) => b[1] - a[1]); const [phase, score] = entries[0]; const second = entries[1]?.[1] ?? 0; const confidence = score === 0 ? 0 : Math.min(97, Math.round((score / Math.max(1, symptoms.length || 1)) * 100) + Math.min(20, (score - second) * 6)); return { phase, label: score === 0 ? Likely ${cyclePhaseHint.toLowerCase()} phase : Likely ${phase.toLowerCase()} phase, confidence, confidenceLabel: confidence >= 82 ? "Strong match" : confidence >= 58 ? "Moderate match" : confidence > 0 ? "Early signal" : "No clear pattern", fertilityLabel: phase === "Ovulation" ? "Likely fertile window" : phase === "Luteal" ? "Likely post-ovulation" : phase === "Follicular" ? "Likely pre-ovulation" : "Likely menstrual timing", scores, }; }
+function inferPhaseFromSymptoms(symptoms, cyclePhaseHint) {
+  const scores = {
+    Menstrual: 0,
+    Follicular: 0,
+    Ovulation: 0,
+    Luteal: 0,
+    Pregnancy: 0,
+  };
 
+  symptoms.forEach((symptom) => {
+    Object.entries(phasePredictionWeights).forEach(([phase, weights]) => {
+      if (weights.includes(symptom)) scores[phase] += 1;
+    });
+  });
+
+  if (cyclePhaseHint && scores[cyclePhaseHint] !== undefined) {
+    scores[cyclePhaseHint] += 1;
+  }
+
+  const entries = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const [phase, score] = entries[0];
+  const second = entries[1]?.[1] ?? 0;
+  const baseConfidence =
+    score === 0 ? 0 : Math.round((score / Math.max(1, symptoms.length || 1)) * 100);
+  const confidence =
+    score === 0 ? 0 : Math.min(97, baseConfidence + Math.min(20, (score - second) * 6));
+
+  return {
+    phase,
+    label:
+      score === 0
+        ? `Likely ${String(cyclePhaseHint || "luteal").toLowerCase()} phase`
+        : `Likely ${phase.toLowerCase()} phase`,
+    confidence,
+    confidenceLabel:
+      confidence >= 82
+        ? "Strong match"
+        : confidence >= 58
+          ? "Moderate match"
+          : confidence > 0
+            ? "Early signal"
+            : "No clear pattern",
+    fertilityLabel:
+      phase === "Ovulation"
+        ? "Likely fertile window"
+        : phase === "Luteal"
+          ? "Likely post-ovulation"
+          : phase === "Follicular"
+            ? "Likely pre-ovulation"
+            : "Likely menstrual timing",
+    scores,
+  };
+}
 function emptyLog() { return { symptoms: [], activities: [], sexualActivity: [], contraception: [], notes: "", height: 165, weight: 65, hydrationGoal: 2000, hydrationMl: 0, steps: 0, sleep: 0, bmiStartWeight: 65, activeMinutes: 0, activityCalories: 0, fastingPlan: "14:10", fastingStartTime: "18:30", fastingEndTime: "08:30", }; }
 
 export default function CycleWellnessPage() { const today = startOfDay(new Date()); const yesterday = addDays(today, -1);
