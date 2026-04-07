@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
+const STORAGE_KEY = "cycle-tracker-basic-v1";
 
 function startOfDay(date) {
   const d = new Date(date);
