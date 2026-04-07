@@ -107,10 +107,24 @@ export default function App() {
           <button
             key={i}
             onClick={() => setSelectedDate(d.date)}
-            className="p-2 bg-gray-800 rounded"
-          >
-            {d.day}
-          </button>
+            style={{
+            padding: 8,
+            borderRadius: 8,
+            border:
+              selectedDate.toDateString() === d.date.toDateString()
+              ? "2px solid #d3ae91"
+              : "1px solid #333",
+            background:
+              d.phase === "Menstrual"
+                ? "#7f1d1d"
+                : d.phase === "Ovulation"
+                  ? "#92400e"
+                  : "#1f2937",
+            color: "white",
+          }}
+        >
+          {d.day}
+        </button>
         ))}
       </div>
     </div>
