@@ -123,13 +123,14 @@ export default function App() {
                       ? "#92400e"   // gold
                       : "#022c22",  // luteal dark green
               color: "white",
-              // ✅ ADD THIS
+
+              //
               boxShadow:
                 d.phase === "Ovulation"
-                  ? "0 0 10px #fbbf24"
+                  ? "0 0 15px 3px #fbbf24"
                   : "none",
             }}
-        >
+          >
           {d.day}
         </button>
         ))}
