@@ -112,8 +112,8 @@ export default function App() {
             borderRadius: 8,
             border:
               selectedDate.toDateString() === d.date.toDateString()
-              ? "2px solid #d3ae91"
-              : "1px solid #333",
+                ? "2px solid #d3ae91"
+                : "1px solid #333",
             background:
               d.phase === "Menstrual"
                 ? "#7f1d1d"
