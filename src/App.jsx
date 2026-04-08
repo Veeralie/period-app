@@ -542,19 +542,35 @@ function buildCalendarDays(viewDate, lastPeriodStart, cycleLength, periodLength)
   });
 }
 
-function inferPhaseFromSymptoms(symptoms) {
+function inferPhaseFromSymptoms(symptoms, cyclePhaseHint) {
   const scores = Object.fromEntries(Object.keys(phasePredictionWeights).map((key) => [key, 0]));
+
   symptoms.forEach((symptom) => {
     Object.entries(phasePredictionWeights).forEach(([phase, weights]) => {
       if (weights.includes(symptom)) scores[phase] += 1;
     });
   });
+
+  if (cyclePhaseHint && scores[cyclePhaseHint] !== undefined) {
+    scores[cyclePhaseHint] += 1;
+  }
+
   const entries = Object.entries(scores).sort((a, b) => b[1] - a[1]);
   const [best, score] = entries[0] || ["Menstrual", 0];
+  const secondScore = entries[1]?.[1] ?? 0;
   const totalSelected = Math.max(1, symptoms.length);
+  const confidenceBase = score === 0 ? 0 : Math.round((score / totalSelected) * 100);
+  const separationBonus = Math.min(18, Math.max(0, (score - secondScore) * 6));
+  const confidence = score === 0 ? 0 : Math.min(96, confidenceBase + separationBonus);
+
+  const fertilityLabel = best === "Ovulation" ? "Likely fertile window" : best === "Luteal" ? "Likely post-ovulation" : best === "Follicular" ? "Likely pre-ovulation" : "Likely menstrual timing";
+
   return {
-    label: score === 0 ? "Not enough symptom data yet" : `Likely ${best.toLowerCase()} timing`,
-    confidence: score === 0 ? 0 : Math.min(96, Math.round((score / totalSelected) * 100)),
+    phase: best,
+    label: score === 0 ? "Not enough symptom data yet" : `Likely ${best.toLowerCase()} phase`,
+    fertilityLabel,
+    confidence,
+    scores,
   };
 }
 
@@ -630,7 +646,7 @@ export default function CycleWellnessPage() {
   const selectedPhaseName = getPhase(selectedCycleDay, periodLength, ovulationDay);
   const selectedChance = getPregnancyChance(selectedCycleDay, ovulationDay);
   const selectedLog = logs[dateKey(selectedDate)] || emptyLog();
-  const inference = inferPhaseFromSymptoms(selectedLog.symptoms);
+  const inference = inferPhaseFromSymptoms(selectedLog.symptoms, selectedPhaseName);
 
   const nextPeriodStart = useMemo(() => {
     let next = new Date(lastPeriodDateObj);
@@ -692,7 +708,7 @@ export default function CycleWellnessPage() {
 
   const selectedDetails = {
     cycleDay: selectedCycleDay,
-    fertility: selectedCycleDay >= ovulationDay - 4 && selectedCycleDay <= ovulationDay + 1 ? "Fertile window" : "Lower fertility window",
+    fertility: inference.confidence > 0 ? inference.fertilityLabel : selectedCycleDay >= ovulationDay - 4 && selectedCycleDay <= ovulationDay + 1 ? "Fertile window" : "Lower fertility window",
     ovulationStatus:
       selectedCycleDay < ovulationDay
         ? "Ovulation approaching"
@@ -703,6 +719,7 @@ export default function CycleWellnessPage() {
     pregnancyChanceValue: selectedChance.value,
     inferredPhaseLabel: inference.label,
     inferredConfidence: inference.confidence,
+    inferredPhase: inference.phase,
   };
 
   return (
@@ -962,8 +979,16 @@ export default function CycleWellnessPage() {
                   {selectedDetails.inferredConfidence}% confidence
                 </div>
               </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
+                {Object.entries(inference.scores).map(([phaseName, value]) => (
+                  <div key={phaseName} className={`rounded-xl border px-3 py-2 ${selectedDetails.inferredPhase === phaseName ? "border-[#d3ae91]/40 bg-[#d3ae91]/10 text-white" : "border-white/10 bg-black/20 text-white/70"}`}>
+                    <div className="text-xs uppercase tracking-[0.14em] text-white/45">{phaseName}</div>
+                    <div className="mt-1 font-semibold">{value}</div>
+                  </div>
+                ))}
+              </div>
               <p className="mt-3 text-sm text-white/65">
-                This estimate now updates based on the symptoms you save for the selected date.
+                This estimate uses a safe rule-based symptom scoring model layered on top of your cycle calendar and saved logs.
               </p>
             </div>
           </div>
@@ -979,7 +1004,7 @@ export default function CycleWellnessPage() {
 
             <EntrySection
               title="Symptoms"
-              subtitle="Expected signs can be highlighted first, and your saved symptoms drive the inference card above."
+              subtitle="Expected signs are surfaced first, and your saved symptoms feed a rule-based hormonal phase inference engine."
               groupedItems={symptomGroups}
               expectedItemsByCategory={expectedSymptomsByCategory}
               showAllToggle
@@ -1016,6 +1041,9 @@ export default function CycleWellnessPage() {
           <div>
             <h2 className="text-2xl font-bold">Inference weights</h2>
             <p className="mt-1 text-sm text-white/55">Reference signals the app uses when estimating likely cycle timing from symptoms.</p>
+          </div>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/75">
+            The app now uses two layers together: calendar-based cycle estimation and symptom-based inference scoring. This helps it act more like a rule-based cycle intelligence tool, not just a passive tracker.
           </div>
           <div className="mt-4 grid gap-3">
             {Object.entries(phasePredictionWeights).map(([key, values]) => (
